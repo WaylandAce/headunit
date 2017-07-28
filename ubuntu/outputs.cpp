@@ -265,7 +265,8 @@ VideoOutput::VideoOutput(DesktopEventCallbacks* callbacks) : callbacks(callbacks
         #endif
                                  "videoscale name=myconvert ! "
                                  "videoconvert ! "
-                                 "xvimagesink name=mysink";
+                                 "autovideosink name=mysink";
+                                // "xvimagesink name=mysink";
     vid_pipeline = gst_parse_launch(vid_launch_str, &error);
 
     bus = gst_pipeline_get_bus(GST_PIPELINE(vid_pipeline));
@@ -292,13 +293,20 @@ VideoOutput::VideoOutput(DesktopEventCallbacks* callbacks) : callbacks(callbacks
     SDL_GetWindowWMInfo(window, &wmInfo);
 
     GstVideoOverlay* sink = GST_VIDEO_OVERLAY(gst_bin_get_by_name(GST_BIN(vid_pipeline), "mysink"));
-    gst_video_overlay_set_window_handle(sink, wmInfo.info.x11.window);
+
+    if (wmInfo.subsystem == SDL_SYSWM_WAYLAND)  {
+        gst_video_overlay_set_window_handle(sink, (guintptr)wmInfo.info.wl.surface);
+    } else {
+        gst_video_overlay_set_window_handle(sink, wmInfo.info.x11.window);
+    }
     //Let SDL do the key events, etc
     gst_video_overlay_handle_events(sink, FALSE);
     gst_object_unref(sink);
 
     //Don't use SDL's weird cursor, too small on HiDPI
-    XUndefineCursor(wmInfo.info.x11.display, wmInfo.info.x11.window);
+    if (wmInfo.subsystem == SDL_SYSWM_X11) {
+        XUndefineCursor(wmInfo.info.x11.display, wmInfo.info.x11.window);
+    }
 
     timeout_src = g_timeout_source_new(100);
     g_source_set_priority(timeout_src, G_PRIORITY_HIGH);
