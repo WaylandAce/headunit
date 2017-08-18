@@ -8,6 +8,7 @@ INCLUDES=$(shell pkg-config --cflags \
 	gstreamer-audio-1.0 \
 	gstreamer-codecparsers-1.0 \
 	gstreamer-plugins-bad-1.0 \
+        gstreamer-plugins-good-1.0 \
 	libcrypto \
 	libusb-1.0 \
 	openssl \
@@ -29,6 +30,7 @@ LFLAGS= -g -rdynamic -pthread -ldl $(shell pkg-config --libs \
 	gstreamer-audio-1.0 \
 	gstreamer-codecparsers-1.0 \
 	gstreamer-plugins-bad-1.0 \
+        gstreamer-plugins-good-1.0 \
 	libcrypto \
 	libusb-1.0 \
 	openssl \

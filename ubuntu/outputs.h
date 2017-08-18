@@ -6,6 +6,7 @@
 #include <gst/app/gstappsrc.h>
 #include <gst/app/gstappsink.h>
 #include <gst/video/videooverlay.h>
+//#include <gst/autodetect/gstautovideosink.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 #include <time.h>

@@ -266,7 +266,7 @@ VideoOutput::VideoOutput(DesktopEventCallbacks* callbacks) : callbacks(callbacks
                                  "videoscale name=myconvert ! "
                                  "videoconvert ! "
 				// "xvimagesink name=mysink";
-                                 "waylandsink name=mysink";
+                                 "autovideosink name=mysink";
 
     vid_pipeline = gst_parse_launch(vid_launch_str, &error);
 
@@ -292,9 +292,7 @@ VideoOutput::VideoOutput(DesktopEventCallbacks* callbacks) : callbacks(callbacks
     SDL_VERSION(&wmInfo.version);
     SDL_GetWindowWMInfo(window, &wmInfo);
 
-
     GstElement* test = gst_bin_get_by_name(GST_BIN(vid_pipeline), "mysink");
-    GstVideoOverlay* sink = GST_VIDEO_OVERLAY(test);
 
     const char *subsystem = "an unknown system!";
     switch(wmInfo.subsystem) {
@@ -319,18 +317,18 @@ VideoOutput::VideoOutput(DesktopEventCallbacks* callbacks) : callbacks(callbacks
 #endif
     }
 
-	printf("Subsystem: %s %d\n", subsystem, wmInfo.subsystem);
+    printf("Subsystem: %s\n", subsystem);
+    GstAutoVideoSink* sink = GST_AUTO_VIDEO_SINK(test);
+
+//    if (wmInfo.subsystem == SDL_SYSWM_X11) {
+//        GstVideoOverlay* sink = GST_VIDEO_OVERLAY(test);
 //        gst_video_overlay_set_window_handle(sink, (guintptr)wmInfo.info.wl.surface);
-//    } else {
-        gst_video_overlay_set_window_handle(sink, wmInfo.info.x11.window);
-
-	//Don't use SDL's weird cursor, too small on HiDPI
-//	XUndefineCursor(wmInfo.info.x11.display, wmInfo.info.x11.window);
+//        // Don't use SDL's weird cursor, too small on HiDPI
+//        XUndefineCursor(wmInfo.info.x11.display, wmInfo.info.x11.window);
+//        // Let SDL do the key events, etc
+//        gst_video_overlay_handle_events(sink, FALSE);
+//        gst_object_unref(sink);
 //    }
-
-    //Let SDL do the key events, etc
-  //  gst_video_overlay_handle_events(sink, FALSE);
-//    gst_object_unref(sink);
 
     timeout_src = g_timeout_source_new(100);
     g_source_set_priority(timeout_src, G_PRIORITY_HIGH);
