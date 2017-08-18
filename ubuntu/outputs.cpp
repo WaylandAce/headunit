@@ -265,8 +265,9 @@ VideoOutput::VideoOutput(DesktopEventCallbacks* callbacks) : callbacks(callbacks
         #endif
                                  "videoscale name=myconvert ! "
                                  "videoconvert ! "
-                                 "autovideosink name=mysink";
-                                // "xvimagesink name=mysink";
+				// "xvimagesink name=mysink";
+                                 "waylandsink name=mysink";
+
     vid_pipeline = gst_parse_launch(vid_launch_str, &error);
 
     bus = gst_pipeline_get_bus(GST_PIPELINE(vid_pipeline));
@@ -276,7 +277,6 @@ VideoOutput::VideoOutput(DesktopEventCallbacks* callbacks) : callbacks(callbacks
     vid_src = GST_APP_SRC(gst_bin_get_by_name(GST_BIN(vid_pipeline), "mysrc"));
 
     gst_app_src_set_stream_type(vid_src, GST_APP_STREAM_TYPE_STREAM);
-
 
     window = SDL_CreateWindow("Android Auto",
                               SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -292,21 +292,45 @@ VideoOutput::VideoOutput(DesktopEventCallbacks* callbacks) : callbacks(callbacks
     SDL_VERSION(&wmInfo.version);
     SDL_GetWindowWMInfo(window, &wmInfo);
 
-    GstVideoOverlay* sink = GST_VIDEO_OVERLAY(gst_bin_get_by_name(GST_BIN(vid_pipeline), "mysink"));
 
-    if (wmInfo.subsystem == SDL_SYSWM_WAYLAND)  {
-        gst_video_overlay_set_window_handle(sink, (guintptr)wmInfo.info.wl.surface);
-    } else {
+    GstElement* test = gst_bin_get_by_name(GST_BIN(vid_pipeline), "mysink");
+    GstVideoOverlay* sink = GST_VIDEO_OVERLAY(test);
+
+    const char *subsystem = "an unknown system!";
+    switch(wmInfo.subsystem) {
+      case SDL_SYSWM_UNKNOWN:   break;
+      case SDL_SYSWM_WINDOWS:   subsystem = "Microsoft Windows(TM)";  break;
+      case SDL_SYSWM_X11:       subsystem = "X Window System";        break;
+#if SDL_VERSION_ATLEAST(2, 0, 3)
+      case SDL_SYSWM_WINRT:     subsystem = "WinRT";                  break;
+#endif
+      case SDL_SYSWM_DIRECTFB:  subsystem = "DirectFB";               break;
+      case SDL_SYSWM_COCOA:     subsystem = "Apple OS X";             break;
+      case SDL_SYSWM_UIKIT:     subsystem = "UIKit";                  break;
+#if SDL_VERSION_ATLEAST(2, 0, 2)
+      case SDL_SYSWM_WAYLAND:   subsystem = "Wayland";                break;
+      case SDL_SYSWM_MIR:       subsystem = "Mir";                    break;
+#endif
+#if SDL_VERSION_ATLEAST(2, 0, 4)
+      case SDL_SYSWM_ANDROID:   subsystem = "Android";                break;
+#endif
+#if SDL_VERSION_ATLEAST(2, 0, 5)
+      case SDL_SYSWM_VIVANTE:   subsystem = "Vivante";                break;
+#endif
+    }
+
+	printf("Subsystem: %s %d\n", subsystem, wmInfo.subsystem);
+//        gst_video_overlay_set_window_handle(sink, (guintptr)wmInfo.info.wl.surface);
+//    } else {
         gst_video_overlay_set_window_handle(sink, wmInfo.info.x11.window);
-    }
-    //Let SDL do the key events, etc
-    gst_video_overlay_handle_events(sink, FALSE);
-    gst_object_unref(sink);
 
-    //Don't use SDL's weird cursor, too small on HiDPI
-    if (wmInfo.subsystem == SDL_SYSWM_X11) {
-        XUndefineCursor(wmInfo.info.x11.display, wmInfo.info.x11.window);
-    }
+	//Don't use SDL's weird cursor, too small on HiDPI
+//	XUndefineCursor(wmInfo.info.x11.display, wmInfo.info.x11.window);
+//    }
+
+    //Let SDL do the key events, etc
+  //  gst_video_overlay_handle_events(sink, FALSE);
+//    gst_object_unref(sink);
 
     timeout_src = g_timeout_source_new(100);
     g_source_set_priority(timeout_src, G_PRIORITY_HIGH);
